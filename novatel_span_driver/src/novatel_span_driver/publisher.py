@@ -30,7 +30,7 @@ import rospy
 import tf
 import geodesy.utm
 
-from novatel_msgs.msg import BESTPOS, CORRIMUDATA, INSCOV, INSPVAX
+from novatel_msgs.msg import BESTPOS, CORRIMUDATA, INSCOV, INSPVAX, RAWIMUX
 from sensor_msgs.msg import Imu, NavSatFix, NavSatStatus
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion, Point, Pose, Twist
@@ -79,15 +79,22 @@ class NovatelPublisher(object):
         self.publish_tf = rospy.get_param('~publish_tf', False)
         self.odom_frame = rospy.get_param('~odom_frame', 'odom_combined')
         self.base_frame = rospy.get_param('~base_frame', 'base_link')
+        self.imu_frame = rospy.get_param('~imu_frame', 'imu')
 
         # When True, UTM odom x, y pose will be published with respect to the
         # first coordinate received.
         self.zero_start = rospy.get_param('~zero_start', False)
 
-        self.imu_rate = rospy.get_param('~rate', 100)
+        self.imu_rate_ins = rospy.get_param('~imu_rate_ins', 100)
+        self.imu_rate_raw = rospy.get_param('~imu_rate_raw', 200)
+
+        self.imu_scale_accel = rospy.get_param('~imu_scale_accel', 2e-8)
+        self.imu_scale_gyro = rospy.get_param('~imu_scale_gyro', 1e-9)
+
 
         # Topic publishers
-        self.pub_imu = rospy.Publisher('imu/data', Imu, queue_size=1)
+        self.pub_imu_raw = rospy.Publisher('imu/data_raw', Imu, queue_size=1)
+        self.pub_imu_ins = rospy.Publisher('imu/data_ins', Imu, queue_size=1)
         self.pub_odom = rospy.Publisher('navsat/odom', Odometry, queue_size=1)
         self.pub_origin = rospy.Publisher('navsat/origin', Pose, queue_size=1, latch=True)
         self.pub_navsatfix = rospy.Publisher('navsat/fix', NavSatFix, queue_size=1)
@@ -105,6 +112,7 @@ class NovatelPublisher(object):
         rospy.Subscriber('novatel_data/corrimudata', CORRIMUDATA, self.corrimudata_handler)
         rospy.Subscriber('novatel_data/inscov', INSCOV, self.inscov_handler)
         rospy.Subscriber('novatel_data/inspvax', INSPVAX, self.inspvax_handler)
+        rospy.Subscriber('novatel_data/rawimux', RAWIMUX, self.rawimudata_handler)
 
     def bestpos_handler(self, bestpos):
         navsat = NavSatFix()
@@ -237,18 +245,41 @@ class NovatelPublisher(object):
 
         # Angular rates (rad/s)
         # corrimudata log provides instantaneous rates so multiply by IMU rate in Hz
-        imu.angular_velocity.x = corrimudata.pitch_rate * self.imu_rate
-        imu.angular_velocity.y = corrimudata.roll_rate * self.imu_rate
-        imu.angular_velocity.z = corrimudata.yaw_rate * self.imu_rate
+        imu.angular_velocity.x = corrimudata.pitch_rate * self.imu_rate_ins
+        imu.angular_velocity.y = corrimudata.roll_rate * self.imu_rate_ins
+        imu.angular_velocity.z = corrimudata.yaw_rate * self.imu_rate_ins
         imu.angular_velocity_covariance = IMU_VEL_COVAR
 
         # Linear acceleration (m/s^2)
-        imu.linear_acceleration.x = corrimudata.x_accel * self.imu_rate
-        imu.linear_acceleration.y = corrimudata.y_accel * self.imu_rate
-        imu.linear_acceleration.z = corrimudata.z_accel * self.imu_rate
+        imu.linear_acceleration.x = corrimudata.x_accel * self.imu_rate_ins
+        imu.linear_acceleration.y = corrimudata.y_accel * self.imu_rate_ins
+        imu.linear_acceleration.z = corrimudata.z_accel * self.imu_rate_ins
         imu.linear_acceleration_covariance = IMU_ACCEL_COVAR
 
-        self.pub_imu.publish(imu)
+        self.pub_imu_ins.publish(imu)
+
+
+    def rawimudata_handler(self, imudata):
+        # TODO: Work out these covariances properly. Logs provide covariances in local frame, not body
+        imu = Imu()
+        imu.header.stamp = rospy.Time.now()
+        imu.header.frame_id = self.imu_frame
+
+        # Angular rates (rad/s)
+        # imudata log provides instantaneous rates so multiply by IMU rate in Hz
+        # Also apply the scale factor (function of the IMU type)
+        imu.angular_velocity.x = imudata.gyro_x * self.imu_scale_gyro * self.imu_rate_raw
+        imu.angular_velocity.y = - imudata.gyro_neg_y * self.imu_scale_gyro * self.imu_rate_raw
+        imu.angular_velocity.z = imudata.gyro_z * self.imu_scale_gyro * self.imu_rate_raw
+        imu.angular_velocity_covariance = IMU_VEL_COVAR
+
+        # Linear acceleration (m/s^2)
+        imu.linear_acceleration.x = imudata.accel_x * self.imu_scale_accel * self.imu_rate_raw
+        imu.linear_acceleration.y = - imudata.accel_neg_y * self.imu_scale_accel * self.imu_rate_raw
+        imu.linear_acceleration.z = imudata.accel_z * self.imu_scale_accel * self.imu_rate_raw
+        imu.linear_acceleration_covariance = IMU_ACCEL_COVAR
+
+        self.pub_imu_raw.publish(imu)
 
     def inscov_handler(self, inscov):
         # TODO: Supply this data in the IMU and Odometry messages.

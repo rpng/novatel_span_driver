@@ -33,5 +33,6 @@ msgs = {
     42: ("bestpos", BESTPOS),
     264: ("inscov", INSCOV),
     812: ("corrimudata", CORRIMUDATA),
+    1461: ("rawimux", RAWIMUX),
     1465: ("inspvax", INSPVAX)
 }

@@ -1,5 +1,5 @@
 <launch>
-  <arg name="ip" default="198.161.73.9" />
+  <arg name="ip" default="192.168.1.2" />
   <arg name="port" default="3001" />
 
   <node name="novatel_span_driver" pkg="novatel_span_driver" type="driver">
@@ -7,22 +7,24 @@
     <param name="port" value="$(arg port)" />
     <rosparam ns="configuration">
       log_request:
-        inspvaxb: 0.02
         bestposb: 0.02
-        corrimudatab: 0.02
-        inscovb: 1
+#        corrimudatab: 0.02
+#        inscovb: 1
+        inspvaxb: 0.001
+        rawimuxb: 0.005
 # The example setup commands below apply to a Clearpath Robotics Husky running
 # SPAN with dual antennas. Run the SPAN setup wizard on your own platform to generate
 # an appropriate config.
-#      command:
-#        connectimu: COM3 IMU_KVH_COTS
-#        setimuorientation: 5
-#        vehiclebodyrotation: 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
-#        applyvehiclebodyrotation: enable
-#        setimutoantoffset: -0.519200 -0.131500 0.258600 0.001000 0.001000 0.001000
-#        setimutoantoffset2: 0.580800 -0.131500 0.258600 0.001000 0.001000 0.001000
-#        setinsoffset: 0.030800 -0.294200 -0.104100
-#        alignmentmode: AUTOMATIC
+      command:
+        connectimu: COM3 IMU_ISA100C
+        setimuorientation: 6
+        vehiclebodyrotation: 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+        applyvehiclebodyrotation: enable
+        setimutoantoffset: -0.519200 -0.131500 0.258600 0.001000 0.001000 0.001000
+        setimutoantoffset2: 0.580800 -0.131500 0.258600 0.001000 0.001000 0.001000
+        setinsoffset: 0.030800 -0.294200 -0.104100
+        alignmentmode: AUTOMATIC
+        assignlbandbeam: auto
     </rosparam>
 
     <!-- Whether or not the driver should publish a TF, and what frames it should
@@ -33,11 +35,17 @@
 
     <!-- IMU rate; controls scaling of the imu/data topic values. This is a
          function of the underlying hardware IMU rate, which is 100Hz for IMU-CPT. -->
-    <param name="rate" value="100" />
+    <param name="imu_rate_ins"     value="100" />
+    <param name="imu_rate_raw"     value="200" />
+
+    <!-- IMU scale values; These are from table 48 in the SPAN OEM6 firmware reference -->
+    <!-- For ISA-100C we have the following: -->
+    <param name="imu_scale_accel"  value="2e-8" type="double" />
+    <param name="imu_scale_gyro"   value="1e-9" type="double" />
 
     <!-- Disable this if you don't want SPAN to use wheel encoder data. Remap the odom
          topic if your encoders publish elsewhere. -->
-    <param name="enable_wheel_velocity" value="true" />
+    <param name="enable_wheel_velocity" value="false" />
 
     <!-- Disable this if you'd like the Odometry to be absolute within the UTM zone
          rather than starting from an arbitrary zero origin. -->
