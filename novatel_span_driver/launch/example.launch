@@ -7,10 +7,10 @@
     <param name="port" value="$(arg port)" />
     <rosparam ns="configuration">
       log_request:
-        bestposb: 0.02
-        corrimudatab: 0.02
+        bestposb: 0.05
+        corrimudatab: 0.05
 #        inscovb: 1
-        inspvaxb: 0.001
+        inspvaxb: 0.05
         rawimuxb: 0.005
 # The example setup commands below apply to a Clearpath Robotics Husky running
 # SPAN with dual antennas. Run the SPAN setup wizard on your own platform to generate
