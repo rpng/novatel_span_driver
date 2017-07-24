@@ -8,7 +8,7 @@
     <rosparam ns="configuration">
       log_request:
         bestposb: 0.02
-#        corrimudatab: 0.02
+        corrimudatab: 0.02
 #        inscovb: 1
         inspvaxb: 0.001
         rawimuxb: 0.005

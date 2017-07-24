@@ -44,5 +44,7 @@ class MessageHandler(Handler):
 
     def handle(self, buff, header):
         self.message.translator().deserialize(buff)
-        #self.message.header = header
+        # Add header if we have it
+        if hasattr(self.message, 'header'):
+			self.message.header = header
         self.publisher.publish(self.message)
