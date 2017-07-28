@@ -81,9 +81,9 @@ def process_bag(bagfile):
                 # Note that the system originaly used value = 2^std_dev
                 # Thus we can find that std_dev = log(value)/log(2) y>0
                 cov = list(rgetattr(msg,"position_covariance"))
-                cov[0] = math.log10(cov[0])/math.log10(2);
-                cov[4] = math.log10(cov[4])/math.log10(2);
-                cov[8] = math.log10(cov[8])/math.log10(2);
+                cov[0] = pow(math.log10(cov[0])/math.log10(2),2);
+                cov[4] = pow(math.log10(cov[4])/math.log10(2),2);
+                cov[8] = pow(math.log10(cov[8])/math.log10(2),2);
                 # Update the covariance
                 rsetattr(msg,"position_covariance",cov)
             # If the topic is for ODOM then correct that covariance
@@ -93,12 +93,12 @@ def process_bag(bagfile):
                 # Thus we can find that std_dev = log(value)/log(2) y>0
                 cov_pose = list(rgetattr(msg,"pose.covariance"))
                 cov_twist = list(rgetattr(msg,"twist.covariance"))
-                cov_pose[21] = math.log10(cov_pose[21])/math.log10(2);
-                cov_pose[28] = math.log10(cov_pose[28])/math.log10(2);
-                cov_pose[35] = math.log10(cov_pose[35])/math.log10(2);
-                cov_twist[0] = math.log10(cov_twist[0])/math.log10(2);
-                cov_twist[7] = math.log10(cov_twist[7])/math.log10(2);
-                cov_twist[14] = math.log10(cov_twist[14])/math.log10(2);
+                cov_pose[21] = pow(math.log10(cov_pose[21])/math.log10(2),2);
+                cov_pose[28] = pow(math.log10(cov_pose[28])/math.log10(2),2);
+                cov_pose[35] = pow(math.log10(cov_pose[35])/math.log10(2),2);
+                cov_twist[0] = pow(math.log10(cov_twist[0])/math.log10(2),2);
+                cov_twist[7] = pow(math.log10(cov_twist[7])/math.log10(2),2);
+                cov_twist[14] = pow(math.log10(cov_twist[14])/math.log10(2),2);
                 # Update the covariances
                 rsetattr(msg,"pose.covariance",cov_pose)
                 rsetattr(msg,"twist.covariance",cov_twist)
